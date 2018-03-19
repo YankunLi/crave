@@ -42,6 +42,74 @@ void delete_block(block_t * block) {
     }
 }
 
+buffer_t * allocate_buffer(buffer_t * buf) {
+    void * temp_ptr;
+    if (buf->b_total_size == 0) {
+        temp_ptr = (char *) malloc(FILESYSTEM_PAGESIZE);
+    } else {
+        temp_ptr = realloc(buf->b_ptr, FILESYSTEM_PAGESIZE);
+    }
+
+    if (temp_ptr) {
+        buf->b_ptr = (char *) temp_ptr;
+        buf->b_total_size += FILESYSTEM_PAGESIZE;
+    }
+
+    return temp_ptr;
+}
+
+void * free_buffer(buffer_t * buf) {
+    if (buf->b_total_size != 0) {
+        free(buf->b_ptr);
+        buf->b_ptr = NULL;
+        buf->b_total_size = 0;
+        buf->b_used_size = 0;
+    }
+}
+
+static char * encode_transaction(const transaction_t *transaction)
+{
+    char * trans_buf;
+    trans_buf = (char *) malloc(FILESYSTEM_PAGESIZE);
+}
+
+static int memory_copy(buffer_t *buf, char *src, uint32_t len)
+{
+    if (buf->b_avail_size < len)
+        if (!allocate_buffer(buf)) {
+            return -1;
+        }
+
+    memcpy(buf->b_ptr, src, len);
+    buf->b_avail_size -= len;
+    buf->b_used_size += len;
+
+    return 0;
+}
+
+static void encode_block(buffer_t *buf, const block_t *block)
+{
+    transaction_t * trans_ptr = NULL;
+    struct list_head * list = NULL;
+
+    //encode chain head
+    memory_copy(buf, (char *) &block->b_index, sizeof(int));
+    memory_copy(buf, (char *) &block->b_previous_hash, 128);
+    memory_copy(buf, (char *) &block->b_timestamp, sizeof(long));
+    memory_copy(buf, (char *) &block->b_proof, sizeof(int));
+
+    //encode chain data
+    list_for_each_entry(trans_ptr, list, t_list)
+        memory_copy(buf, (char *) trans_ptr->data, 256);
+}
+
 char * hash_block(block_t *block) {
 
 }
+
+void add_transaction(block_t *block, transaction_t *trans) {
+}
+
+transaction_t * new_transaction(const char * trans) {
+}
+
