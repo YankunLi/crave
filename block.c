@@ -6,9 +6,11 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+
 #include "list.h"
 #include "block.h"
 #include "utils.h"
+#include "sha256.h"
 
 block_t * new_block(const int index, const char *pre_hash, int proof, struct list_head transactions) {
     block_t * blk = (block_t *) malloc(sizeof(block_t));
@@ -97,19 +99,42 @@ static void encode_block(buffer_t *buf, const block_t *block)
     memory_copy(buf, (char *) &block->b_previous_hash, 128);
     memory_copy(buf, (char *) &block->b_timestamp, sizeof(long));
     memory_copy(buf, (char *) &block->b_proof, sizeof(int));
+    list = (struct list_head *) &block->b_transactions;
 
     //encode chain data
+
     list_for_each_entry(trans_ptr, list, t_list)
         memory_copy(buf, (char *) trans_ptr->data, 256);
 }
 
-char * hash_block(block_t *block) {
-
+char * hash_block(block_t *block)
+{
+    buffer_t buf;
+    char hash_code[32];
+    encode_block(&buf, block);
+    mbedtls_sha256(buf.b_ptr, strlen(buf.b_ptr), hash_code, 0);
+    memcpy(block->b_hash, hash_code, 32);
+    free_buffer(&buf);
 }
 
-void add_transaction(block_t *block, transaction_t *trans) {
+void add_transaction(block_t *block, transaction_t *trans)
+{
+    list_add_tail(&trans->t_list, &block->b_transactions);
 }
 
-transaction_t * new_transaction(const char * trans) {
+transaction_t * new_transaction(const char * trans)
+{
+    transaction_t * trans_ptr = (transaction_t *) malloc(sizeof(transaction_t));
+    if (trans_ptr) {
+        memcpy(trans_ptr, trans, strlen(trans));
+    }
+    return trans_ptr;
 }
 
+extern transaction_t first_trans;
+extern block_t first_block;
+
+static void __attribute__ ((constructor)) init_block()
+{
+    add_transaction(&first_block, &first_trans);
+}

@@ -74,4 +74,8 @@ extern long get_current_time_mics() {
     return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+extern uint32_t proof_of_work()
+{
+}
+
 #endif

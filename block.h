@@ -26,6 +26,11 @@ struct transaction {
     struct list_head t_list;
 };
 
+struct transaction first_trans = {"sender:983kdikfffsdf\
+                                   receiver:lksdlkf345645\
+                                   signature:ldimlmvoser24545",
+                                   LIST_SELF(first_trans.t_list)};
+
 typedef struct transaction transaction_t;
 
 struct block {
@@ -36,6 +41,16 @@ struct block {
     char b_hash[128];
     int b_proof;
     struct list_head b_list;
+};
+
+struct block first_block = {
+    0,
+    "12jikolcb23j48dhs9fmc8uqwnc87zxc",
+    1521462098,
+    LIST_SELF(first_block.b_transactions),
+    "askfjlsdksf03094llkw6lt67l3kl5qw",
+    0,
+    LIST_SELF(first_block.b_list),
 };
 
 typedef struct block block_t;
